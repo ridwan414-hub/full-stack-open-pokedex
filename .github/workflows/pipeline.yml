@@ -18,18 +18,26 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: lint
+      - name: lint #linting
         run: npm run eslint
       
-      - name: build
+      - name: build #building
         run: npm run build
       
-      - name: test
+      - name: test (Jest) #unit testing
         run: npm run test
 
-      - name: e2e tests
+      - name: e2e tests (Cypress) #e2e testing
         uses: cypress-io/github-action@v5
         with:
           command: npm run test:e2e
           start: npm run start-prod
           wait-on: http://localhost:5000  
+
+      - name: Setup Flyctl #setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      
+      - name: Deploy to Fly.io #deployment
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
