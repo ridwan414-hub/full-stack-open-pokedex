@@ -3,6 +3,10 @@ app = "full-stack-open-pokedex-proud-haze-1316"
 [env]
   PORT = "3000" # add this where PORT matches the internal_port below
 
+[deploy]
+  strategy = "canary"
+  wait_time = "1m"
+
 [processes]
   app = "node app.js" # add this
 
@@ -13,3 +17,10 @@ app = "full-stack-open-pokedex-proud-haze-1316"
   auto_start_machines = true
   min_machines_running = 0
   processes = ["app"]
+
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/health"
