@@ -10,7 +10,6 @@ app.get('/health', (req, res) => {
   res.send('ok')
 })
 
-// start app in a wrong port
 app.listen(PORT , () => {
   // eslint-disable-next-line no-console
   console.log(`server started on port ${PORT}`)
