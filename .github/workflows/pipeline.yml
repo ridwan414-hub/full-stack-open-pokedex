@@ -110,3 +110,4 @@ jobs:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
           title: Pipeline Succeeded!
           message: "**Message: **All steps completed successfully!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
+          
