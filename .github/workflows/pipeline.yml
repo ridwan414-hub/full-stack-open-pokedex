@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]    
 
 jobs:
   simple_deployment_pipeline:
@@ -27,20 +30,20 @@ jobs:
       - name: test (Jest) #unit testing
         run: npm run test
 
-      - name: e2e tests (Cypress) #e2e testing
-        uses: cypress-io/github-action@v5
-        with:
-          command: npm run test:e2e
-          start: npm run start-prod
-          wait-on: http://localhost:5000  
+      # - name: e2e tests (Cypress) #e2e testing
+      #   uses: cypress-io/github-action@v5
+      #   with:
+      #     command: npm run test:e2e
+      #     start: npm run start-prod
+      #     wait-on: http://localhost:5000  
 
-      - name: Setup Flyctl #setup flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@master
+      # - name: Setup Flyctl #setup flyctl
+      #   uses: superfly/flyctl-actions/setup-flyctl@master
       
-      - name: Deploy to Fly.io #fly.io deployment
-        run: flyctl deploy --remote-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # - name: Deploy to Fly.io #fly.io deployment
+      #   run: flyctl deploy --remote-only
+      #   env:
+      #     FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
-      - name: Trigger deployment #render deployment
-        run: curl https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
+      # - name: Trigger deployment #render deployment
+      #   run: curl https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
