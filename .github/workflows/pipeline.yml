@@ -13,7 +13,7 @@ env:
   SKIP_CHECK: ${{ contains(join(github.event.commits.*.message), '#skip deploy') }}
 
 jobs:
-  build_and_deploy_pipeline:
+  build_and_test:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -30,14 +30,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Notify Build Failure
-        uses: stegzilla/discord-notify@v4
-        if: failure()
-        with:
-          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
-          title: Build Failed!
-          message: "**Message: **Build Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
-      
       - name: Test (Jest)
         run: npm run test
 
@@ -46,64 +38,30 @@ jobs:
         with:
           command: npm run test:e2e
           start: npm run start-prod
-          wait-on: http://localhost:5000  
+          wait-on: http://localhost:5000
 
-      - name: Notify Test Failure
-        uses: stegzilla/discord-notify@v4
-        if: failure()
-        with:
-          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
-          title: Test Failed!
-          message: "**Message: **Test Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
-
+  deploy:
+    needs: build_and_test
+    if: ${{ !github.env.PR_CHECK && !github.env.SKIP_CHECK }}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      
       - name: Setup Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
       
       - name: Deploy to Fly.io
-        if: ${{ !env.PR_CHECK && !env.SKIP_CHECK }}
         run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-      - name: Notify Fly.io Deployment Failure
-        uses: stegzilla/discord-notify@v4
-        if: failure()
-        with:
-          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
-          title: Fly.io Deployment Failed!
-          message: "**Message: **Fly.io Deployment Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
-
-      - name: Notify Fly.io Deployment Success
-        uses: stegzilla/discord-notify@v4
-        if: success()
-        with:
-          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
-          title: Fly.io Deployment Succeeded!
-          message: "**Message: **Fly.io Deployment Succeeded!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
       
       - name: Trigger Render deployment
-        if: ${{ !env.PR_CHECK && !env.SKIP_CHECK }}
-        run: curl https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
-
-      - name: Notify Render Deployment Failure
-        uses: stegzilla/discord-notify@v4
-        if: failure()
-        with:
-          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
-          title: Render Deployment Failed!
-          message: "**Message: **Render Deployment Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
-
-      - name: Notify Render Deployment Success
-        uses: stegzilla/discord-notify@v4
-        if: success()
-        with:
-          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
-          title: Render Deployment Succeeded!
-          message: "**Message: **Render Deployment Succeeded!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
+        run: |
+          curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
 
   tag_release:
-    needs: [build_and_deploy_pipeline]
-    if: ${{ !github.env.PR_CHECK  }}
+    needs: [deploy]
+    if: ${{ !github.env.PR_CHECK && !github.env.SKIP_CHECK }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -114,18 +72,39 @@ jobs:
           WITH_V: true
           DEFAULT_BUMP: patch
 
+  notify:
+    needs: [build_and_test, deploy, tag_release]
+    if: always()
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Notify Build/Test Failure
+        uses: stegzilla/discord-notify@v4
+        if: ${{ needs.build_and_test.result == 'failure' }}
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Build/Test Failed!
+          message: "**Message: **Build or Test Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
+
+      - name: Notify Deployment Failure
+        uses: stegzilla/discord-notify@v4
+        if: ${{ needs.deploy.result == 'failure' }}
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Deployment Failed!
+          message: "**Message: **Deployment Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
+
       - name: Notify Release Failure
         uses: stegzilla/discord-notify@v4
-        if: failure()
+        if: ${{ needs.tag_release.result == 'failure' }}
         with:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
           title: Release Failed!
           message: "**Message: **Release Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
 
-      - name: Notify Release Success
+      - name: Notify Success
         uses: stegzilla/discord-notify@v4
-        if: success()
+        if: ${{ needs.build_and_test.result == 'success' && needs.deploy.result == 'success' && needs.tag_release.result == 'success' }}
         with:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
-          title: Release Succeeded!
-          message: "**Message: **Release Succeeded!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
+          title: Pipeline Succeeded!
+          message: "**Message: **All steps completed successfully!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
