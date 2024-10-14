@@ -21,6 +21,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Debug SKIP flags
+        run: |
+          echo "SKIP_DEPLOY=${{ env.SKIP_DEPLOY }}"
+          echo "SKIP_TEST=${{ env.SKIP_TEST }}"
+          echo "PR_CHECK=${{ env.SKIP_TEST }}"
 
       - name: Install dependencies
         run: npm install
@@ -35,7 +40,7 @@ jobs:
         run: npm run test
 
       - name: E2E Tests (Cypress)
-        if: ${{ !github.env.SKIP_TEST }}
+        if: ${{ !env.SKIP_TEST }}
         uses: cypress-io/github-action@v5
         with:
           command: npm run test:e2e
@@ -110,4 +115,4 @@ jobs:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
           title: Pipeline Succeeded!
           message: "**Message: **All steps completed successfully!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}"
-          
+
