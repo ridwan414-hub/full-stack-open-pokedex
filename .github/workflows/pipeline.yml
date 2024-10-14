@@ -25,7 +25,7 @@ jobs:
         run: |
           echo "SKIP_DEPLOY=${{ env.SKIP_DEPLOY }}"
           echo "SKIP_TEST=${{ env.SKIP_TEST }}"
-          echo "PR_CHECK=${{ env.SKIP_TEST }}"
+          echo "PR_CHECK=${{ env.PR_CHECK }}"
 
   #     - name: Install dependencies
   #       run: npm install
