@@ -10,7 +10,8 @@ on:
 
 env:
   PR_CHECK: ${{ github.event_name == 'pull_request' }}
-  SKIP_CHECK: ${{ contains(join(github.event.commits.*.message), '#skip deploy') }}
+  SKIP_DEPLOY: ${{ contains(join(github.event.commits.*.message), '#skip deploy') }}
+  SKIP_TEST: ${{ contains(join(github.event.commits.*.message), '#skip test') }}
 
 jobs:
   build_and_test:
@@ -34,6 +35,7 @@ jobs:
         run: npm run test
 
       - name: E2E Tests (Cypress)
+        if: ${{ !github.env.SKIP_TEST }}
         uses: cypress-io/github-action@v5
         with:
           command: npm run test:e2e
@@ -42,7 +44,7 @@ jobs:
 
   deploy:
     needs: build_and_test
-    if: ${{ !github.env.PR_CHECK && !github.env.SKIP_CHECK }}
+    if: ${{ !github.env.PR_CHECK && !github.env.SKIP_DEPLOY }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +63,7 @@ jobs:
 
   tag_release:
     needs: [deploy]
-    if: ${{ !github.env.PR_CHECK && !github.env.SKIP_CHECK }}
+    if: ${{ !github.env.PR_CHECK && !github.env.SKIP_DEPLOY }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
