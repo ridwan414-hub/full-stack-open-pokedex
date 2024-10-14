@@ -48,7 +48,7 @@ jobs:
           wait-on: http://localhost:5000
 
   deploy:
-    needs: build_and_test
+    needs: [build_and_test]
     if: ${{ !github.env.PR_CHECK && !github.env.SKIP_DEPLOY }}
     runs-on: ubuntu-20.04
     steps:
