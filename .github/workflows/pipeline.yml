@@ -32,13 +32,12 @@ jobs:
         run: npm run build
       
       - name: Build Failure
-        uses: rjstone/discord-webhook-notify@v1.0.4
+        uses: stegzilla/discord-notify@v4
         if: failure()
         with:
-          severity: error
-          details: Build Failed!
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}  
-      
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Build Failed!
+          message: "**Message: **Build Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}          "
       - name: test (Jest) #unit testing
         run: npm run test
 
@@ -50,12 +49,12 @@ jobs:
           wait-on: http://localhost:5000  
 
       - name: Test Failure
-        uses: rjstone/discord-webhook-notify@v1.0.4
+        uses: stegzilla/discord-notify@v4
         if: failure()
         with:
-          severity: error
-          details: Test Failed!
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Test Failed!
+          message: "**Message: **Test Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}          "
 
       - name: Setup Flyctl #setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
@@ -67,40 +66,40 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       
       - name: Deploy Failure
-        uses: rjstone/discord-webhook-notify@v1.0.4
+        uses: stegzilla/discord-notify@v4
         if: failure()
         with:
-          severity: error
-          details: Fly.io Deployment Failed!
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Fly.io Deployment Failed!
+          message: "**Message: **Fly.io Deployment Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}          "
       
       - name: Deploy Success
-        uses: rjstone/discord-webhook-notify@v1.0.4
+        uses: stegzilla/discord-notify@v4
         if: success()
         with:
-          severity: success
-          details: Fly.io Deployment Succeeded!
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Fly.io Deployment Succeeded!
+          message: "**Message: **Fly.io Deployment Succeeded!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}          "
 
       - name: Trigger deployment #render deployment
         if: ${{ !env.PR_CHECK && !env.SKIP_CHECK }}
         run: curl https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
       
       - name: Render Deployment Failure
-        uses: rjstone/discord-webhook-notify@v1.0.4
+        uses: stegzilla/discord-notify@v4
         if: failure()
         with:
-          severity: error
-          details: Render Deployment Failed!
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Render Deployment Failed!
+          message: "**Message: **Render Deployment Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}          "
 
       - name: Render Deployment Success
-        uses: rjstone/discord-webhook-notify@v1.0.4
+        uses: stegzilla/discord-notify@v4
         if: success()
         with:
-          severity: success
-          details: Render Deployment Succeeded!
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Render Deployment Succeeded!
+          message: "**Message: **Render Deployment Succeeded!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}          "
 
   tag_release:
     needs: [simple_deployment_pipeline]
@@ -116,17 +115,17 @@ jobs:
           DEFAULT_BUMP: patch
 
       - name: Release Failure
-        uses: rjstone/discord-webhook-notify@v1.0.4
+        uses: stegzilla/discord-notify@v4
         if: failure()
         with:
-          severity: error
-          details: Release Failed!
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Release Failed!
+          message: "**Message: **Release Failed!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}          "
 
       - name: Release Success
-        uses: rjstone/discord-webhook-notify@v1.0.4
+        uses: stegzilla/discord-notify@v4
         if: success()
         with:
-          severity: success
-          details: Release Succeeded!
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}    
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
+          title: Release Succeeded!
+          message: "**Message: **Release Succeeded!\n**Repository: ** ${{ github.repository }}\n**Commit: ** ${{ github.event.head_commit.message }}\n**Commit Hash: ** ${{ github.event.head_commit.id }}          "
